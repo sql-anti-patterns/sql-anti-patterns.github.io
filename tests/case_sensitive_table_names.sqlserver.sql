@@ -1,8 +1,8 @@
 --
 -- Since: March, 2020
 -- Author: gvenzl
--- Name: selectstar.sql
--- Description: SELECT * test cases
+-- Name: case_sensitive_table_names.sqlserver.sql
+-- Description: Case sensitive tables names test cases for SQL Server
 --
 -- Copyright 2020 Gerald Venzl
 --
@@ -19,40 +19,22 @@
 -- limitations under the License.
 
 --
--- Test case: Retrieve a newly added column unintentionally
+-- Case insensitive table names --> OK
 --
-CREATE TABLE selectstar (id INTEGER, txt VARCHAR(255));
-INSERT INTO selectstar (id, txt) VALUES (1, 'test');
-COMMIT; 
+CREATE TABLE COUNTRIES (id INTEGER, name VARCHAR(100));
 
--- Retrieve table data
-SELECT * FROM selectstar;
+select name from countries;
 
--- Add new column
-ALTER TABLE selectstar ADD tms DATE;
-
--- Retrieve table data (this will now retrieve tms as well)
-SELECT * FROM selectstar;
-
-
+DROP TABLE countries;
 --
--- Example: get table definition
+-- Case sensitive table names --> Will still work because SQL Server doesn't support quoted identifiers
 --
+CREATE TABLE "Countries" (id INTEGER, name VARCHAR(100));
 
--- MySQL, MariaDB, Oracle
-DESCRIBE selectstar;
+SELECT name FROM COUNTRIES;
 
--- Postgres
-\d selectstar;
+INSERT INTO "countries" (id, name) values (1,'bla');
+INSERT INTO "Countries" (id, name) values (2,'boo');
+INSERT INTO COUNTRIES (id, name) values (3,'hihi');
 
--- SQL Server
-sp_columns selectstar;
-go
-
--- Db2
-DESCRIBE TABLE selectstar
-
---
--- Cleanup
---
-DROP TABLE selectstar;
+DROP TABLE COUNTRIES;
