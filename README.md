@@ -1,11 +1,16 @@
+<a name="top"></a>
+
 * [General](#general)
 * [SQL constructs](#sql-constructs)
+* [Administration](#administration)
 
 <a name="general"></a>
 # General
 
 * [Autocommit](#autocommit)
+* [Row-by-row processing](#row-by-row)
 * [Case sensitive table/column names](#case-sensitive-table-column-names)
+* [Not using the appropriate grants](#appropriate-grants)
 
 <a name="autocommit"></a>
 ## Autocommit
@@ -21,12 +26,20 @@ Although a `commit` for a transaction sounds simple, it can have quite an impact
 
 When `autocommit` is enabled, all these I/Os and steps will be performed for every single DML operation that you issue, which can cause an undesired performance and resource utilization impact. Also, every `commit` issued on the driver side means an additional network roundtrip to the database.
 
+[Back to general](#general) [Back to top](#top)
+
+<a name="row-by-row"></a>
+## Row-by-row processing
+[[TODO]]
+
+[Back to general](#general) [Back to top](#top)
+
 <a name="case-sensitive-table-column-names"></a>
 ## Case sensitive table/column names
 Most databases support case sensitive table names and allow you to have tables such as `Countries`, `countries`, and `COUNTRIES` coexist within a schema. While this may appear as a handy feature at first, it has several drawbacks and should not be used.
 
 ### Not supported by the relational model
-The relational model does not define case sensitivity on table nor column names. In the relational world, there is no difference between a table called `Countries`, `countries`, or `COUNTRIES`. The normalization rules instruct to have only one table for all records of a certain entity. In the example above, according to the relational model all country records belong in one table, whatever name that table might have. The case of the table name (as well as column names) does carry no significance to reason different about the data.  
+The relational model does not define case sensitivity on table nor column names. In the relational world, there is no difference between a table called `Countries`, `countries`, or `COUNTRIES`. The normalization rules instruct to have only one table for all records of a certain entity. In the example above, according to the relational model all country records belong in one table, whatever name that table might have. The case of the table name (as well as column names) does carry no significance to reason different about the data.
 
 For example, if you have a table `Countries` and another table `COUNTRIES`, it is not clear which country records can be found in the former and the latter table, nor where a new country record should go.
 
@@ -75,10 +88,20 @@ For more information, see:
 #### SQL Server
 SQL Server does seem to support [case sensitivity](https://docs.microsoft.com/en-us/sql/odbc/reference/develop-app/identifier-case?view=sql-server-ver15) and [*quoted identifiers*](https://docs.microsoft.com/en-us/sql/odbc/reference/develop-app/quoted-identifiers?view=sql-server-ver15) as per the documentation. The default for SQL Server appears to be case insensitivity.
 
+[Back to general](#general) [Back to top](#top)
+
+<a name="appropriate-grants"></a>
+## Not using the appropriate grants
+[[TODO]]
+
+[Back to general](#general) [Back to top](#top)
+
 <a name="sql-constructs"></a>
 # SQL constructs
 
 * [SELECT * FROM](#select-star)
+* [Concatenate SQL Strings](#concatenate-sql-strings)
+* [Not using bind variables](#bind-variables)
 
 <a name="select-star"></a>
 ## SELECT * FROM
@@ -103,3 +126,28 @@ If you want to see what columns are available on a table, instead of issuing a `
 * Postgres: `\d table_name`
 * SQL Server: `sp_columns table_name`
 * Db2: `DESCRIBE TABLE table_name`
+
+[Back to SQL constructs](#sql-constructs) [Back to top](#top)
+
+<a name="concatenate-sql-strings"></a>
+## Concatenate SQL Strings
+See [Not using bind variables](#bind-variables).
+
+[Back to SQL constructs](#sql-constructs) [Back to top](#top)
+
+<a name="bind-variables"></a>
+## Not using bind variables
+[[TODO]]
+
+[Back to SQL constructs](#sql-constructs) [Back to top](#top)
+
+<a name="administration"></a>
+# Administration
+
+* [Not testing backup restores](#backup-restore)
+
+<a name="backup-restore"></a>
+## Not testing backup restores
+[[TODO]]
+
+[Back to Administration](#administration) [Back to top](#top)
