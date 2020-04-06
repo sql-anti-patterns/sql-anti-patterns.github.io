@@ -8,7 +8,9 @@
 # General
 
 * [Autocommit](#autocommit)
+* [Row-by-row processing](#row-by-row)
 * [Case sensitive table/column names](#case-sensitive-table-column-names)
+* [Not using the appropriate grants](#appropriate-grants)
 
 <a name="autocommit"></a>
 ## Autocommit
@@ -23,6 +25,12 @@ Many people use databases for a long time because of their [`ACID`](https://en.w
 Although a `commit` for a transaction sounds simple, it can have quite an impact on your overall performance. The `commit` is what tells the database to write data on disk into the transaction journal (your modifications tend to happen in memory on the database server). Hence a `commit` results directly in an I/O that your database connection will have to wait for until that I/O is done (because of the `ACID` transaction guarantee). There are a few more steps that the database needs to perform in order to mark your transaction complete, such as releasing potential locks on the rows, etc.
 
 When `autocommit` is enabled, all these I/Os and steps will be performed for every single DML operation that you issue, which can cause an undesired performance and resource utilization impact. Also, every `commit` issued on the driver side means an additional network roundtrip to the database.
+
+[Back to general](#general) [Back to top](#top)
+
+<a name="row-by-row"></a>
+## Row-by-row processing
+[[TODO]]
 
 [Back to general](#general) [Back to top](#top)
 
@@ -82,10 +90,18 @@ SQL Server does seem to support [case sensitivity](https://docs.microsoft.com/en
 
 [Back to general](#general) [Back to top](#top)
 
+<a name="appropriate-grants"></a>
+## Not using the appropriate grants
+[[TODO]]
+
+[Back to general](#general) [Back to top](#top)
+
 <a name="sql-constructs"></a>
 # SQL constructs
 
 * [SELECT * FROM](#select-star)
+* [Concatenate SQL strings](#concatenate-sql-strings)
+* [Not using bind variables](#bind-variables)
 
 <a name="select-star"></a>
 ## SELECT * FROM
@@ -110,6 +126,18 @@ If you want to see what columns are available on a table, instead of issuing a `
 * Postgres: `\d table_name`
 * SQL Server: `sp_columns table_name`
 * Db2: `DESCRIBE TABLE table_name`
+
+[Back to SQL constructs](#sql-constructs) [Back to top](#top)
+
+<a name="concatenate-sql-strings"></a>
+## Concatenate SQL strings
+See [Not using bind variables](#bind-variables).
+
+[Back to SQL constructs](#sql-constructs) [Back to top](#top)
+
+<a name="bind-variables"></a>
+## Not using bind variables
+[[TODO]]
 
 [Back to SQL constructs](#sql-constructs) [Back to top](#top)
 
