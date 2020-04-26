@@ -1,7 +1,7 @@
 --
 -- Since: April, 2020
 -- Author: gvenzl
--- Name: parameterized_sql_statement.sql.sql
+-- Name: parameterized_sql_statement.sqlserver.sql
 -- Description: Parameterized SQL statements test cases for SQL Server
 --
 -- Copyright 2020 Gerald Venzl
