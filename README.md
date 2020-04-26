@@ -93,7 +93,28 @@ SQL Server does seem to support [case sensitivity](https://docs.microsoft.com/en
 
 <a name="overcommitting"></a>
 ## Overcommitting
-[[TODO]]
+Overcommitting describes the action of committing too frequently. This usually occurs when using [`Autocommit`](#autocommit) but can also happen when explicitly issuing `COMMIT` within your application code.
+
+### Why does it matter?
+Although overcommitting won't break your application nor the database, is has several drawbacks similar to using `Autocommit`. One of them is a negative impact on performance. With every commit that your application issues, you incur an additional network roundtrip to the database but also force the database to write data to disk although that might not be necessary at that point in time. A typical example is when loading a file where each line in the file translates to one or more `INSERT`/`UPDATE`/`MERGE` statements. You may feel like you should commit after you have loaded a line but that may not be necessary. You could also commit after 10 or 100 lines, perhaps even 1000 lines. This is commonly referred to as `batch size`. But what happens when your application terminates halfway through the loading process and you didn't commit after each line? Even if that happens, the file will still be available when your application starts up again and continues the loading process. You will most likely already have a mechanism in place to know at which line to continue. The fact that you have to continue at line 237 or 230 (if you are going with a `batch size` of 10, for example) won't matter much to the application. However, it may matter a lot for the overall performance of your data loading process.  
+
+**Do not underestimate this seemingly trivial anti-pattern. Overcommitting is still today a common reason for bad overall performance!** 
+
+### When should you commit?
+The critical question is: **when should you commit?**  
+There is only ever going to be one correct answer that you should remember at all times! That answer is: **whenever your business logic requires you to commit!**
+
+#### What does that mean?
+In order to save data in a database, you eventually need to commit at some point. Sometimes you have the luxury of flexibility when you want to commit, like with the file load example above. Other times you don't have a choice. An example of having no choice is cash withdrawals from bank accounts. In this scenario, you cannot predict when a withdrawal is going to happen. You probably don't want the customer to wait until, for example, 100 more customers are going to decide to withdraw money as well. And you probably don't want to give your customer the money before you can commit the fact that the withdrawal happened. In this scenario, the business logic requires you to commit after each withdrawal, regardless of whether there is 1 withdrawal per minute or 1000 per second.
+
+The general rule of thumb is:
+
+* **Flexibility** of when you can commit is given **whenever you *can* restart the transaction**.
+* **No choice** of when you can commit is given **whenever you *cannot* restart the transaction**.
+
+The file load is an example of a restartable transaction. Even if your application crashes halfway through, the file and all the data is still there and you can pick up where you left off.
+
+The cash withdrawal is an example of a non-restartable transaction. Once the customer got the money, the money is gone. If your application crashes before it can store that fact in the database, you will have an incorrect balance sheet. The money is gone, but the system doesn't reflect that.
 
 [Back to general](#general) [Back to top](#top)
 
@@ -119,7 +140,7 @@ Concatenated SQL strings with input values can be vulnerable to SQL injections a
 
 <a name="sql-injections"></a>
 ## Leaving your SQL statements vulnerable to SQL injections
-[SQL injection](https://en.wikipedia.org/wiki/SQL_injection) is a code injection technique used to execute malicious SQL statements via vulnerable applications. **SQL injections are a serious security threat that still cause data breaches today! You should be taking every precaution to prevent SQL injections!**
+[SQL injection](https://en.wikipedia.org/wiki/SQL_injection) is a code injection technique used to execute malicious SQL statements via vulnerable applications. **SQL injections are a serious security threat that still causes data breaches today! You should be taking every precaution to prevent SQL injections!**
 
 [[TODO]]
 
