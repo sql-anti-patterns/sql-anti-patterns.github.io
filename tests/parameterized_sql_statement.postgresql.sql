@@ -1,7 +1,7 @@
 --
 -- Since: April, 2020
 -- Author: gvenzl
--- Name: parameterized_sql_statement.postgres.sql
+-- Name: parameterized_sql_statement.postgresql.sql
 -- Description: Parameterized SQL statements test cases for PostgreSQL
 --
 -- Copyright 2020 Gerald Venzl
