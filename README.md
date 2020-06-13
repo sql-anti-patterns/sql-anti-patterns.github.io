@@ -9,9 +9,7 @@
 
 * [Autocommit](#autocommit)
 * [Case sensitive table/column names](#case-sensitive-table-column-names)
-* [Not using the appropriate grants](#appropriate-grants)
 * [Overcommitting](#overcommitting)
-* [Row-by-row processing](#row-by-row)
 
 <a name="autocommit"></a>
 ## Autocommit
@@ -85,12 +83,6 @@ SQL Server does seem to support [case sensitivity](https://docs.microsoft.com/en
 
 [Back to general](#general) [Back to top](#top)
 
-<a name="appropriate-grants"></a>
-## Not using the appropriate grants
-[[TODO]]
-
-[Back to general](#general) [Back to top](#top)
-
 <a name="overcommitting"></a>
 ## Overcommitting
 Overcommitting describes the action of committing too frequently. This usually occurs when using [`Autocommit`](#autocommit) but can also happen when explicitly issuing `COMMIT` within your application code.
@@ -118,31 +110,16 @@ The cash withdrawal is an example of a non-restartable transaction. Once the cus
 
 [Back to general](#general) [Back to top](#top)
 
-<a name="row-by-row"></a>
-## Row-by-row processing
-[[TODO]]
-
-[Back to general](#general) [Back to top](#top)
-
 <a name="sql-constructs"></a>
 # SQL constructs
 
 * [Concatenate SQL strings with input values](#concatenate-sql-strings)
-* [Leaving your SQL statements vulnerable to SQL injections](#sql-injections)
 * [SELECT * FROM](#select-star)
 * [Not using parameterized SQL statements](#parameterized-sql-statements)
 
 <a name="concatenate-sql-strings"></a>
 ## Concatenate SQL strings with input values
-Concatenated SQL strings with input values can be vulnerable to SQL injections and cause performance degradation. See [Leaving your SQL statements vulnerable to SQL injections](#sql-injections) and [Not using parameterized SQL statements](#parameterized-sql-statements) for more information.
-
-[Back to SQL constructs](#sql-constructs) [Back to top](#top)
-
-<a name="sql-injections"></a>
-## Leaving your SQL statements vulnerable to SQL injections
-[SQL injection](https://en.wikipedia.org/wiki/SQL_injection) is a code injection technique used to execute malicious SQL statements via vulnerable applications. **SQL injections are a serious security threat that still causes data breaches today! You should be taking every precaution to prevent SQL injections!**
-
-[[TODO]]
+Concatenated SQL strings with input values can be vulnerable to SQL injections and cause performance degradation. See [Not using parameterized SQL statements](#parameterized-sql-statements) for more information.
 
 [Back to SQL constructs](#sql-constructs) [Back to top](#top)
 
@@ -281,7 +258,7 @@ EXECUTE fooplan(1, 'Hunter Valley', 't', 200.00);
 The second example demonstrates how to use a parameterized SQL statement for an `INSERT` operation. At first, this may seem counter-intuitive but also `INSERT` statements (all SQL statements) need to be parsed and analyzed. Even though the `Analyze` phase for an `INSERT` statement is much less complex than a SQL query (after all, all the database has to do is to insert a new row), the database still has to perform some work in order to execute the `INSERT`. If you have many rows that you would like to insert, you can save the database quite some redundant work by using variables for one `INSERT` statement compared to giving it many different "brand new" `INSERT` statements with different text in the `VALUES` clause.
 
 ### Some types of SQL injections cannot occur
-Parameterized SQL statements prevent some forms of SQL injections. SQL injections are a serious security risk and should be prevented at all costs. See [Leaving your SQL statements vulnerable to SQL injections](#sql-injections) for more information on SQL injections and how to prevent them.
+Parameterized SQL statements prevent some forms of SQL injections. SQL injections are a serious security risk and should be prevented at all costs.
 
 [Back to SQL constructs](#sql-constructs) [Back to top](#top)
 
