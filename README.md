@@ -9,7 +9,9 @@
 
 * [Autocommit](#autocommit)
 * [Case sensitive table/column names](#case-sensitive-table-column-names)
+* [Not using the appropriate privileges](#appropriate-privileges)
 * [Overcommitting](#overcommitting)
+* [Row-by-row processing](#row-by-row)
 
 <a name="autocommit"></a>
 ## Autocommit
@@ -83,6 +85,39 @@ SQL Server does seem to support [case sensitivity](https://docs.microsoft.com/en
 
 [Back to general](#general) [Back to top](#top)
 
+<a name="appropriate-privileges"></a>
+## Not using the appropriate privileges
+The database users that your applications connect with should always follow the [principle of least privilege](https://en.wikipedia.org/wiki/Principle_of_least_privilege) and concept of [separation of duties](https://en.wikipedia.org/wiki/Separation_of_duties). In other words, they should only be given the most granular privileges (sometimes referred to as *grants* or *permissions*) to perform their tasks and different database users should be used to perform different tasks. This ensures a fine-grained security model that benefits your application, data model, and the data itself. Below are a couple of rules:
+
+* If an application is only reading data from tables (or views), it shall only have read privileges (`SELECT`) but no write privileges (`INSERT`, `UPDATE`, `DELETE`) on these tables, nor any read or write privileges on any other tables (or views).
+* If an application is only reading from and modifying data in tables (or views), it shall only have CRUD privileges (`INSERT`, `SELECT`, `UPDATE`, `DELETE`) on these tables (or views) but not any other tables (or views).
+* An application shall not have any Data Definition (`DDL`, e.g. `CREATE TABLE`, `DROP TABLE`, ...) privileges unless it is explicitly designed for such a task (for example, an application needs to truncate a staging table before the next load, hence requiring the `TRUNCATE TABLE` privilege on that table; an application needs privileges to dynamically create and drop supporting database objects at runtime).
+* An application shall not have any administrative privileges unless explicitly designed for these tasks.
+* An application that is designed for data model modification or administrative tasks shall use a different database user than applications accessing the data, also adhering to the principle of least privileges.
+* If a database manages *independent* data for many applications, each associated data model (and corresponding database objects) shall reside in its own `SCHEMA`.
+
+The principle of least privilege and concept of separation of duties not only prevents applications and users from accidental modification or deletion of data but also lowers the risk of exposure via security vulnerability attacks (see  [SQL injections](#sql-injections)).
+
+For more information, see the privileges sections in the documentation:
+
+* PostgreSQL
+  * [Privileges](https://www.postgresql.org/docs/current/ddl-priv.html)
+  * [Database Roles](https://www.postgresql.org/docs/12/user-manag.html)
+* MySQL
+  * [Privileges Provided by MySQL](https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html)
+  * [Using Roles](https://dev.mysql.com/doc/refman/8.0/en/roles.html)
+* Oracle
+  * [GRANT reference: Listings of System and Object Privileges](https://docs.oracle.com/en/database/oracle/oracle-database/20/sqlrf/GRANT.html#GUID-20B4E2C0-A7F8-4BC8-A5E8-BE61BDC41AC3)
+  * [Predefined Roles in an Oracle Database Installation](https://docs.oracle.com/en/database/oracle/oracle-database/20/dbseg/configuring-privilege-and-role-authorization.html#GUID-A5B26A03-32CF-4F5D-A6BE-F2452AD8CB8A)
+* SQL Server
+  * [Permissions](https://docs.microsoft.com/en-us/sql/relational-databases/security/permissions-database-engine?view=sql-server-ver15)
+  * [Getting Started with Database Engine Permissions](https://docs.microsoft.com/en-us/sql/relational-databases/security/authentication-access/getting-started-with-database-engine-permissions?view=sql-server-ver15)
+* Db2
+  * [Grant reference (see all references on the left)](https://www.ibm.com/support/knowledgecenter/en/SSEPGG_11.1.0/com.ibm.db2.luw.sql.ref.doc/doc/r0000966.html)
+  * [Creating and granting membership in roles](https://www.ibm.com/support/knowledgecenter/en/SSEPGG_11.1.0/com.ibm.db2.luw.admin.sec.doc/doc/c0050533.html)
+
+[Back to general](#general) [Back to top](#top)
+
 <a name="overcommitting"></a>
 ## Overcommitting
 Overcommitting describes the action of committing too frequently. This usually occurs when using [`Autocommit`](#autocommit) but can also happen when explicitly issuing `COMMIT` within your application code.
@@ -110,16 +145,31 @@ The cash withdrawal is an example of a non-restartable transaction. Once the cus
 
 [Back to general](#general) [Back to top](#top)
 
+<a name="row-by-row"></a>
+## Row-by-row processing
+[[TODO]]
+
+[Back to general](#general) [Back to top](#top)
+
 <a name="sql-constructs"></a>
 # SQL constructs
 
 * [Concatenate SQL strings with input values](#concatenate-sql-strings)
+* [Leaving your SQL statements vulnerable to SQL injections](#sql-injections)
 * [SELECT * FROM](#select-star)
 * [Not using parameterized SQL statements](#parameterized-sql-statements)
 
 <a name="concatenate-sql-strings"></a>
 ## Concatenate SQL strings with input values
-Concatenated SQL strings with input values can be vulnerable to SQL injections and cause performance degradation. See [Not using parameterized SQL statements](#parameterized-sql-statements) for more information.
+Concatenated SQL strings with input values can be vulnerable to SQL injections and cause performance degradation. See [Leaving your SQL statements vulnerable to SQL injections](#sql-injections) and [Not using parameterized SQL statements](#parameterized-sql-statements) for more information.
+
+[Back to SQL constructs](#sql-constructs) [Back to top](#top)
+
+<a name="sql-injections"></a>
+## Leaving your SQL statements vulnerable to SQL injections
+[SQL injection](https://en.wikipedia.org/wiki/SQL_injection) is a code injection technique used to execute malicious SQL statements via vulnerable applications. **SQL injections are a serious security threat that still causes data breaches today! You should be taking every precaution to prevent SQL injections!**
+
+[[TODO]]
 
 [Back to SQL constructs](#sql-constructs) [Back to top](#top)
 
@@ -258,7 +308,7 @@ EXECUTE fooplan(1, 'Hunter Valley', 't', 200.00);
 The second example demonstrates how to use a parameterized SQL statement for an `INSERT` operation. At first, this may seem counter-intuitive but also `INSERT` statements (all SQL statements) need to be parsed and analyzed. Even though the `Analyze` phase for an `INSERT` statement is much less complex than a SQL query (after all, all the database has to do is to insert a new row), the database still has to perform some work in order to execute the `INSERT`. If you have many rows that you would like to insert, you can save the database quite some redundant work by using variables for one `INSERT` statement compared to giving it many different "brand new" `INSERT` statements with different text in the `VALUES` clause.
 
 ### Some types of SQL injections cannot occur
-Parameterized SQL statements prevent some forms of SQL injections. SQL injections are a serious security risk and should be prevented at all costs.
+Parameterized SQL statements prevent some forms of SQL injections. SQL injections are a serious security risk and should be prevented at all costs. See [Leaving your SQL statements vulnerable to SQL injections](#sql-injections) for more information on SQL injections and how to prevent them.
 
 [Back to SQL constructs](#sql-constructs) [Back to top](#top)
 
