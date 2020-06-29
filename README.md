@@ -147,6 +147,67 @@ The cash withdrawal is an example of a non-restartable transaction. Once the cus
 
 <a name="row-by-row"></a>
 ## Row-by-row processing
+Row-by-row processing describes an iterative technique that loops through a data set and operates on each individual entry a time, hence processing the data set a row at a time, or *row by row*. In a common scenario, an application executes a `SELECT` statement and then fetches each row of the result set from the database over the network in a loop. Usually some operations are executed on each individual row within the loop. This technique works well on small data sets and is easy to understand. However, for large data sets this technique has several disadvantages. It requires many network roundtrips to transmit small pieces of data and constrains the processing itself to a serial execution model, preventing it to take advantage of multiple CPU cores on the system.
+
+The alternative to row-by-row processing is usually called *set-based processing* or *batch processing*, which describes a technique that applies an operation on a *set* or *batch* of data inside the database. In a common scenario, an application executes a `SELECT` statement that already performs operations on the data set, only fetching the single row end result from the database over the network.
+
+To illustrate the differences let's look at an example:
+
+Assume that we have a table called `purchases` that stores every purchase ever made on our globally operating web store. Amongst others, the `purchases` table includes the following columns: `amount` and `country`. Let's say that we want to sum up the total revenue from a given country.
+
+Using the **row-by-row technique**, the `SELECT` statement would look like this:
+
+```sql
+SELECT amount
+  FROM purchases
+    WHERE country = @country;
+```
+
+The application would execute this `SELECT` statement, fetch each row of the result set and apply the current amount to a total sum, similar to this:
+
+```code
+stmt = prepareStmt("SELECT amount FROM purchases WHERE country = @country");
+stmt.setParameter("@country", "Austria");
+result = stmt.executeQuery();
+
+total = 0;
+while (result.hasNext()) {
+  result.fetchNextRow();
+  total = total + result.getValue("amount");
+}
+```
+
+The example above will produce the correct result. However, the iterations of the while loop are directly correlated to the number of rows returned by the query and are hence unpredictable and directly dependent on the data itself.
+
+Using the **set-based technique**, the `SELECT` statement would look like this:
+
+```sql
+SELECT SUM(amount) AS amount
+  FROM purchases
+    WHERE country = @country;
+```
+
+The difference to the statement above is that this statement applies the `SUM()` aggregate function over the `amount` column. By doing so, we instruct the database to already calculate the sum of all rows returned and only send back the total sum to the application. Hence the application would execute this `SELECT` statement and only fetch a single row containing the aggregated sum, similar to this:
+
+```code
+stmt = prepareStmt("SELECT SUM(amount) AS amount FROM purchases WHERE country = @country");
+stmt.setParameter("@country", "Austria");
+result = stmt.executeQuery();
+result.fetchNextRow();
+total = result.getValue("amount");
+```
+
+The main benefit of the **set-based technique** over the **row-by-row technique** in this case is that the set-based technique will only ever require one network roundtrip sending a couple of bytes of the total sum, while the row-by-row technique will require an unpredictable amount of network roundtrips and bytes. Another benefit of the **set-based technique** is that the database could easily parallelize the sum operation without having to move any data across the wire.
+
+**The performance impact by network roundtrips is not to be underestimated!** Let's say that a network roundtrip takes about 1 millisecond, something very reasonable with modern networks, the time spent just to send data back and forth, not having even processed any data yet, is the following:
+
+| Rows          | Time spent                             |
+| ------------: | -------------------------------------- |
+|             1 | 1 millisecond                          |
+|         1,000 | 1 second                               |
+|     1,000,000 | 16 minutes, 40 seconds                 |
+| 1,000,000,000 | 11 days 13 hours 46 minutes 40 seconds |
+
 [[TODO]]
 
 [Back to general](#general) [Back to top](#top)
