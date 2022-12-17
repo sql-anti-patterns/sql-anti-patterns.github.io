@@ -15,17 +15,38 @@
 
 <a name="autocommit"></a>
 ## Autocommit
-[`Autocommit`](https://en.wikipedia.org/wiki/Autocommit) is a built-in mode of database connection operation provided by most databases. If enabled, it will issue an implicit `COMMIT` after every single `DML` operation. This has several drawbacks on performance and explicit transaction boundaries control.
+[`Autocommit`](https://en.wikipedia.org/wiki/Autocommit) is a built-in database connection mode provided by most databases. When enabled, this mode will issue a `COMMIT` after every single database interaction that started a new transaction, immediately and implicitly completing the transaction before control is returned to the client. This has several drawbacks. For one, transactions cannot be rolled back as they have already been committed by the time control is returned to the client. Second, clients also won't have control over the boundaries of a given transaction, i.e., how many operations should be grouped and hence occur in one atomic transaction. Last but not least, `autocommit` can also have a potential impact on performance, especially on systems that execute many operations concurrently.
+
+### Transactions cannot be rolled back
+Because `autocommit` commits transactions on the client's behalf before control is returned to the client, an application has no way to rollback a given transaction because the transaction is already completed. With `autocommit` mode enabled, the following statement
+
+```sql
+INSERT INTO countries (id, name) VALUES (1, 'Austria');
+INSERT INTO countries (id, name) VALUES (2, 'Switzerland');
+INSERT INTO countries (id, name) VALUES (3, 'United States');
+COMMIT;
+```
+will be executed on the database as
+
+```sql
+INSERT INTO countries (id, name) VALUES (1, 'Austria');
+COMMIT;
+INSERT INTO countries (id, name) VALUES (2, 'Switzerland');
+COMMIT;
+INSERT INTO countries (id, name) VALUES (3, 'United States');
+COMMIT;
+COMMIT; -- the original COMMIT sent by the application
+```
 
 ### Loss of transaction boundaries
-When `autocommit` is enabled your application no longer has control over the boundaries of the transactions. A business transaction may require to insert a payment record into the `payments` table first and then delete the items in the `shopping_carts` table for that customer. If anything goes wrong, the entire transaction should be rolled back, i.e. the customer's credit card should not be charged and the items should remain in the customer's shopping cart. Imagine the following scenario: `autocommit` is enabled and an error happens when deleting from the customer's shopping cart. At this point in time, the payment record has already been committed and can no longer be rolled back. You think that's not a big deal, just look for the payment record and delete it in your exception handling block? What if there were triggers on that `payments` table that already propagated that payment transaction to the finance system? What if there is no trigger `ON DELETE` on the `payments` table that will undo the propagation when you delete the record? What if your application doesn't have the permissions to perform `DELETE` operations on the `payments` table? You just never know and can quickly end up in a bad spot, just because `autocommit` has been enabled.
+When `autocommit` is enabled your application no longer has control over the boundaries of a transaction. Take a retail website as an example. At checkout, the application may require require to insert a payment record into the `payments` table, insert items from the `shopping_carts` table into the `shipments` table and then delete the items in the `shopping_carts` table before informing the customer that the purchase has gone through. If anything goes wrong, the entire transaction should be rolled back, i.e. the customer's credit card should not be charged and the items should remain in the customer's shopping cart and not being delivered. Imagine the following scenario: `autocommit` is enabled and an error happens when deleting from the `shopping_carts` table. At this point in time, the payment and shipment records have already been committed and can no longer be rolled back. You think that's not a big deal, just look for the records in the payments and shipments tables and delete them in your exception handling block? What if there were triggers on that `payments` table that already propagated that payment transaction to the finance system? What if the shipping system already send of its own orders to the warehouse to get these items? What if your application doesn't have the permissions to perform `DELETE` operations on either of those tables? You just never know and can quickly end up in a bad spot, just because `autocommit` has been enabled. Instead, if all of these steps occurred in a single transaction, you can simply rollback the entire transactions and do not need to worry about any mediation steps.
 
 Many people use databases for a long time because of their [`ACID`](https://en.wikipedia.org/wiki/ACID) transaction properties. With `autocommit` enabled, you take the `A` (Atomicity) out of `ACID`.
 
 ### Potential performance impact
-Although a `commit` for a transaction sounds simple, it can have quite an impact on your overall performance. The `commit` is what tells the database to write data on disk into the transaction journal (your modifications tend to happen in memory on the database server). Hence a `commit` results directly in an I/O that your database connection will have to wait for until that I/O is done (because of the `ACID` transaction guarantee). There are a few more steps that the database needs to perform in order to mark your transaction complete, such as releasing potential locks on the rows, etc.
+Although a `commit` for a transaction sounds simple, it *can* have quite an impact on your overall performance. The `commit` is what tells the database to write data to disk and make it durable (the `D` part of `ACID`). This usually happens by writing the data to a transaction journal (the modifications by the `DML` statements themselves tend to happen in memory on the database server). Hence, issuing a `commit` directly results in an I/O that your database connection will have to wait for. Besides the I/O, databases have to take a few more steps to complete a transaction during a `commit`, such as releasing locks on rows, etc.
 
-When `autocommit` is enabled, all these I/Os and steps will be performed for every single DML operation that you issue, which can cause an undesired performance and resource utilization impact. Also, every `commit` issued on the driver side means an additional network roundtrip to the database.
+When `autocommit` is enabled, these I/O calls and other steps will be performed for every single DML operation that you issue, which can cause an undesired performance and resource utilization impact. Imagine if you were to load 10,000 rows into a table, it may be faster to load the 10,000 rows all at once and only `commit` at the end, then issuing 10,000 I/Os, one for each individual row. Also, every `commit` issued on the driver side can mean an additional network roundtrip to the database. Some drivers may be smart enough to piggyback the `commit` with the `DML` operations, others may not and send a separate call on your behalf.
 
 [Back to general](#general) [Back to top](#top)
 
@@ -165,7 +186,7 @@ SELECT amount
 
 The application would execute this `SELECT` statement, fetch each row of the result set and apply the amount of the current row to a total sum, similar to this:
 
-```
+```java
 stmt = prepareStmt("SELECT amount FROM purchases WHERE country = @country");
 stmt.setParameter("@country", "Austria");
 result = stmt.executeQuery();
@@ -189,7 +210,7 @@ SELECT SUM(amount) AS amount
 
 The difference to the statement above is that this statement applies the `SUM()` aggregate function over the `amount` column. By doing so, we instruct the database to already calculate the sum of all rows in the result set and only send the total sum back to the application. Hence the application would execute this `SELECT` statement and only fetch a single row containing the aggregated sum, similar to this:
 
-```
+```java
 stmt = prepareStmt("SELECT SUM(amount) AS amount FROM purchases WHERE country = @country");
 stmt.setParameter("@country", "Austria");
 result = stmt.executeQuery();
