@@ -198,7 +198,7 @@ while (result.hasNext()) {
 }
 ```
 
-The example above will produce the correct result. However, the iterations of the while loop are directly correlated to the number of rows returned by the query and are hence unpredictable and directly dependent on the data itself.
+The example above will produce the correct result. However, the iterations of the `while` loop are directly correlated to the number of rows returned by the query and are hence unpredictable and directly dependent on the data itself.
 
 Using the **set-based technique**, the `SELECT` statement would look like this:
 
@@ -218,7 +218,7 @@ result.fetchNextRow();
 total = result.getValue("amount");
 ```
 
-The main benefit of the **set-based technique** over the **row-by-row technique** in this case is that the set-based technique will only ever require a single network roundtrip to retrieve a couple of bytes representing the total sum, while the row-by-row technique will require an unpredictable amount of network roundtrips and bytes. The **set-based technique** also allows the database to scan the data all at once in the most efficient way it sees fit, rather than performing scattered reads for the additional fetch request from the application.
+The main benefit of the **set-based technique** over the **row-by-row technique** in this case is that the set-based technique will only ever require a single network roundtrip to retrieve a couple of bytes representing the total sum, while the row-by-row technique will require an unpredictable amount of network roundtrips and bytes. The **set-based technique** also allows the database to scan the data all at once in the most efficient way it sees fit, rather than performing scattered reads for the additional fetch requests from the application.
 
 **The performance impact by network roundtrips is not to be underestimated!** Let's say that a network roundtrip takes about 1 millisecond, something very reasonable with modern networks, the time spent just to send data back and forth, not having even processed any data yet, is the following:
 
